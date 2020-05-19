@@ -19,6 +19,12 @@ Stay tuned, will be a bumpy ride.
 
 - check back here initially, but will eventually provide an online reference guide
 
+# Reference Links
+
+CoreBluetooth (Apple) - https://developer.apple.com/documentation/corebluetooth
+
+PyObjC (CoreBluetooth) - https://github.com/ronaldoussoren/pyobjc/tree/master/pyobjc-framework-CoreBluetooth
+
 # Sample Code
 
 - will provide a basic main program to demonstate how the library works
