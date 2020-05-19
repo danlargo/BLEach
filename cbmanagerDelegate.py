@@ -1,8 +1,8 @@
 import time
 from PyObjCTools import AppHelper
-from bleachDevice import bleDevice 
+from bleachDevice import bleDevice
 
-class BleClass(object):
+class managerDelegate(object):
 
     def __init__(self):
         print("[BLEDelegate INFO] instantiated")
@@ -32,7 +32,7 @@ class BleClass(object):
     def centralManager_didDiscoverPeripheral_advertisementData_RSSI_(self, manager, peripheral, data, rssi):
         self.peripheral = peripheral
         self.data = data
-        localName = "NotSet"
+        localName = "<NotSet>"
 
         if( peripheral is not None ):
             # only do this if the return value is valid
@@ -45,8 +45,8 @@ class BleClass(object):
             # grab the manufacturers data
             if( data is not None ):
                 newDevice.setData(data)
-                # check if we can grab a local name in case the returned name is "Unknown"
-                localName = data.get("kCBAdvDataLocalName", "Unknown")
+                # check if we can grab a local name
+                localName = data.get("kCBAdvDataLocalName", "<NoName>")
                 # grab the data channel if it is present
                 dataChannel = data.get("kCBAdvDataChannel", 0)
                 newDevice.setChannel(dataChannel)
@@ -102,29 +102,37 @@ class BleClass(object):
             AppHelper.stopEventLoop()
         
         # sample connect if found
-        if '8A783AEE-4277-4C3F-8382-ABFA4F6DB8B6' in repr(peripheral.UUID):
-            print( 'DeviceName' + peripheral.name())
-            manager.connectPeripheral_options_(peripheral, None)
-            manager.stopScan()
+        # if '9B4D5446-C91D-4DCA-9D68-F70A2CB3FF71' in repr(self.peripheral.UUID):
+        if 'FB40F718-6C78-4695-B671-8BDD896E8810' in repr(self.peripheral.UUID):
+            try:
+                print( 'DeviceName ' + localName)
+                manager.connectPeripheral_options_(self.peripheral, None)
+                manager.stopScan()
+            except Exception as err:
+                print( "[BLEDelegate FATAL] Exception (", str(err), ") trying to connect to peripheral")
 
     def centralManager_didConnectPeripheral_(self, manager, peripheral):
         print("in didConnect")
         print( repr(peripheral.UUID()) )
-        peripheral.setDelegate_(self)
-        self.peripheral.discoverServices_([wx2_service])
-        
+        self.peripheral.setDelegate_(self)
+        self.peripheral.discoverServices_(None)
+
     def peripheral_didDiscoverServices_(self, peripheral, services):
-        print("in didDiscoverServ")
+        print("in didDiscoverServ\n")
         self.service = self.peripheral.services()[0]
-        self.peripheral.discoverCharacteristics_forService_([wx2_characteristic_data], self.service)
+        print( self.peripheral.services() )
+        self.peripheral.discoverCharacteristics_forService_(None, self.service)
 
     def peripheral_didDiscoverCharacteristicsForService_error_(self, peripheral, service, error):
         print("in didDiscoverChar")
 
         for characteristic in self.service.characteristics():
+            print(characteristic)
             if characteristic.properties() == 18:
                 peripheral.readValueForCharacteristic_(characteristic)
                 break
+        
+        AppHelper.stopEventLoop()
 
     def peripheral_didWriteValueForCharacteristic_error_(self, peripheral, characteristic, error):
         print( 'In error handler' )

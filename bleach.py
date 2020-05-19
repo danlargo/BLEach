@@ -35,7 +35,7 @@ except Exception as err:
 try:
 	import ver
 	import bleachDevice as dev
-	import bleDelegate
+	import cbmanagerDelegate
 	import helpers
 	FAILDEP = False
 
@@ -158,13 +158,15 @@ def load():
 #--------------------
 # METHOD : discover - invoke discover() to grab list of close, detectable BLE devices
 # Parameters :
+#   devToFind - UUID (on MAC) or BLE addres to find, if None then it returns everything
 #	timeout - time in seconds to wait for device advertizements to happen
+#   connectableOnly - flag indicating only to return devices that are connectable (ignored if the devToFind info is set)
 #
 # Return Value :
 #	devices - a list of bleachDevices discovered during the listening process
 #--------------------
 #
-def discover(timeout=2, connectableOnly=False):
+def discover(devToFind=None, timeout=2, connectableOnly=False):
 	# do this for every function to ensure user not ignoring dependencies
 	if( checkDep() == False ): quit()
 
@@ -190,10 +192,11 @@ def discover(timeout=2, connectableOnly=False):
 			if( bleManage is not None ):
 				helpers.debugMsg( "[INFO] CBCentralManager loaded OK")
 				bleManage.init()
-
-				myDelegate = bleDelegate.BleClass()
+				# create the CBManager Delegate
+				myDelegate = cbmanagerDelegate.managerDelegate()
 				myDelegate.setTimeout(timeout)
 				myDelegate.setParams(connectableOnly, DEBUG)
+
 				bleManage.initWithDelegate_queue_options_(myDelegate, None, None)
 				AppHelper.runConsoleEventLoop()
 

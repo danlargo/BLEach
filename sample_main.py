@@ -27,7 +27,7 @@ if( bleach.load() == False ):
 	quit()
 
 # let's run a discover for 10 seconds and see what we find
-myDevs = bleach.discover(10, True)
+myDevs = bleach.discover(None, 10, False)
 if( len(myDevs) ) > 0:
 	print("[discover()] Discovered "+str(len(myDevs))+" devices")
 	for x in myDevs:
