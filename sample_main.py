@@ -16,21 +16,36 @@ print("BLEach (BLE python module) Demo Code")
 print("------------------------------------")
 
 import bleach
+from bleachDevice import bleDevice 
 
-# initilize the BLE module
-if( bleach.setDebug( True, False) == False ):
-	print("[MAIN - ERROR] Unable to set debug flags???")
+# initilize the BLE module debug state
+if( bleach.setDebug(False, False) == False ):
+	print("[setDebug()] Unable to set debug flags???")
 
-if( bleach.load() == True ):
-	print("[MAIN] BLEach module loaded successfully")
-else:
-	print("[MAIN - ERROR] BLEach module load failed")
+if( bleach.load() == False ):
+	print("[load()] BLEach module load failed - Exiting")
+	quit()
 
-# let's run a discover and see what we find
-myDevs = bleach.discover()
+# let's run a discover for 10 seconds and see what we find
+myDevs = bleach.discover(10, True)
 if( len(myDevs) ) > 0:
-	print("[MAIN] Discovered "+str(len(myDevs))+" devices")
+	print("[discover()] Discovered "+str(len(myDevs))+" devices")
 	for x in myDevs:
-		print(x.name)
+		print("[discover()] ", x.getName(), " - ", x.getManufacturer(), ", ", x.getManufID(),
+			"\n(rssi:", x.getRSSI(), " chan: ", x.getChannel(), " pwr: ", x.getTxPower(),
+			"\n[ID] ", x.getAddress(),
+			"\n[CanConnect] ", x.isConnectable(),
+			"\n[UUID List]", x.getServiceIDs_asStr(),
+			"\n[AdvData] ", x.getAdvData(), 
+			"\n[AppleData]", x.getApplePuckType(),
+			"\n"
+		)
+	
+	# debug dump
+	#print("--------\n-------\n---DEBUG---")
+	#for x in myDevs:
+		# dump the data dictionary
+	#	print(x.getData().items())
+	#	print(x.getPeripheral())
 else:
-	print("[MAIN] No BLE devices found")
+	print("[discover()] No BLE devices found")

@@ -13,6 +13,7 @@
 #
 FAILDEP = True
 LOADED = False
+DEBUG=False
 # load system dependencies
 try:
 	import sys
@@ -34,6 +35,7 @@ except Exception as err:
 try:
 	import ver
 	import bleachDevice as dev
+	import bleDelegate
 	import helpers
 	FAILDEP = False
 
@@ -41,7 +43,7 @@ except Exception as err:
 	print("----IMPORT FAILURE---------------------\n"+
 	"[Confused] "+str(err)+"\n"+
 	"[Confused] Unable to Load BLEach module as it needs these local modules to operate\n"+
-	"[Confused] <ver> <bleachDevice> <helpers>\n"+
+	"[Confused] <ver> <CoreBluetooth> <bleachDevice> <belDelegate> <helpers>\n"+
 	"[Confused] This implies an install error\n"+
 	"--------------------------------------------\n")
 	quit()
@@ -113,33 +115,26 @@ def load():
 
 	# only run if we have not run it before
 	if( LOADED == True ):
-		helpers.debugMsg("bleach, already loaded - skipping load() call", False)
+		if( DEBUG): helpers.debugMsg("[INFO] BLEach, already loaded - skipping load() call", False)
 		return
 
 	# let's assume we get everything loaded OK
 	LOADED = True
 
 	# try to load all know dependencies
-	helpers.debugMsg("--BLEach - v"+ver.getVer()+"-- (c) copyright 2020, developed by Slapfrog Labs")
-	helpers.debugMsg("...BLEach evaluating dependencies")
+	helpers.debugMsg("-------------------------")
+	helpers.debugMsg("BLEach - v"+ver.getVer()+"-- (c) copyright 2020, developed by Slapfrog Labs")
+	helpers.debugMsg("[INFO] ...BLEach evaluating dependencies")
 
-	# Let's figure out which OS we are running
-	#
-	helpers.debugMsg("Platform : " + platform.system() + " , " + platform.release() + " (" + os.name + ")", False)
-	if( platform.system() == "Darwin" ):
-		helpers.debugMsg("Running on OS X", False)
-		OSTAG="MAC"
-	else:
-		helpers.debugMsg("[FATAL] Unsupport OS", True)
-		OSTAG=""
-		LOADED = False
+	# find the OS we are on
+	OSTAG = helpers.getOS()
 
 	# start loading the system specific dependencies
 	if( OSTAG == "MAC" ):
 		# CoreBluetooth via PyObjC
 		try:
 			import CoreBluetooth
-			helpers.debugMsg("CoreBluetooth (MAC) - imported correctly")
+			helpers.debugMsg("[INFO] CoreBluetooth (MAC) - imported correctly")
 		except Exception as err:
 			# try to self install
 			helpers.debugMsg("[INSTALL] Attempting to install CoreBluetooth module")
@@ -153,7 +148,7 @@ def load():
 				import CoreBluetooth
 
 	# BLEach dependencies loaded ok
-	helpers.debugMsg("...BLEach dependencies loaded OK")
+	helpers.debugMsg("[INFO] ...BLEach dependencies loaded OK")
 
 	# evaluate BLE environment
 
@@ -169,7 +164,7 @@ def load():
 #	devices - a list of bleachDevices discovered during the listening process
 #--------------------
 #
-def discover(timeout=0):
+def discover(timeout=2, connectableOnly=False):
 	# do this for every function to ensure user not ignoring dependencies
 	if( checkDep() == False ): quit()
 
@@ -177,24 +172,38 @@ def discover(timeout=0):
 
 	# check if library is properly loaded yet
 	global LOADED
+	global DEBUG
 	if( LOADED == False ):
-		helpers.debugMsg("...bleach module not loaded, calling bleach.load() now, this should be called at start of main program")
+		helpers.debugMsg("[WARNING] ...bleach module not loaded, calling bleach.load() now, this should be called at start of main program")
 		if( load() == False ):
-			helpers.debugMsg("...bleach module failed to load")
+			helpers.debugMsg("[WARNING] ...bleach module failed to load")
 			return None
 
 	# MAC discovery here
 	if( OSTAG == "MAC" ):
-		# Using CoreBluetooth
-		import CoreBluetooth
-		bleManage = CoreBluetooth.CBCentralManager.alloc()
-		if( bleManage is not None ):
-			print( "CBCentralManager loaded OK")
-			bleManage.init()
-			bleManage.scanForPeripheralsWithServices()
-		else:
-			debugMsg("Failed to Load CBCentralManager")
+		try:
+			# Using CoreBluetooth
+			import CoreBluetooth
+			from PyObjCTools import AppHelper
 
+			bleManage = CoreBluetooth.CBCentralManager.alloc()
+			if( bleManage is not None ):
+				helpers.debugMsg( "[INFO] CBCentralManager loaded OK")
+				bleManage.init()
+
+				myDelegate = bleDelegate.BleClass()
+				myDelegate.setTimeout(timeout)
+				myDelegate.setParams(connectableOnly, DEBUG)
+				bleManage.initWithDelegate_queue_options_(myDelegate, None, None)
+				AppHelper.runConsoleEventLoop()
+
+				# grab the device list
+				devices = myDelegate.getDevices()
+
+			else:
+				helpers.debugMsg("[WARNING] CBCentralManager.alloc() returned <None>")
+		except Exception as err:
+				helpers.debugMsg("[WARNING] BLEach discover() failed with error <"+str(err)+">")
 
 	# send back the list of devices
 	return devices

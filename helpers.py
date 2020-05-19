@@ -18,7 +18,9 @@ DEBUGFLAG = False
 # load system dependencies
 try:
 	import time
-	import subprocess
+	import os
+	import platform
+	
 except Exception as err:
     print("----IMPORT FAILURE---------------------\n"+
 	"[FATAL] "+str(err)+"\n"+
@@ -101,10 +103,11 @@ def debugMsg( msg, justPrint=True ):
 # Return Value :
 #	success - boolean - flag indicating module was loaded properly
 #--------------------
+#
 def install(package):
 	try:
-		debugMsg("[INSTALL] Attempting to Install - " + package, True)
 		cmd = "pip3 install " + package
+		debugMsg("[INSTALL] "+cmd, True)
 		outLog = subprocess.check_output(cmd, shell=True).decode("utf-8").strip()
 		debugMsg("[INSTALL] " + package + " Successfully installed", True)
 		return True
@@ -113,3 +116,25 @@ def install(package):
 		debugMsg("[FATAL] Failed to Install - " + package, True)
 	
 	return False
+
+#--------------------
+# METHOD : getOS - helper function to determine OS platform
+# Parameters :
+#	none
+#
+# Return Value :
+#	OSTAG - str - tag for OS platform
+#--------------------
+#
+def getOS():
+	# Let's figure out which OS we are running
+	#
+	debugMsg("[INFO] Platform : " + platform.system() + " , " + platform.release() + " (" + os.name + ")", False)
+	if( platform.system() == "Darwin" ):
+		debugMsg("[INFO] Running on OS X", False)
+		osTag="MAC"
+	else:
+		debugMsg("[WARNING] Unsupport OS", True)
+		osTag=""
+
+	return osTag
